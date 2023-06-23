@@ -1,0 +1,30 @@
+##### lambda_function #####
+import device.device as device
+import logging
+import json
+
+logger = logging.getLogger()
+logger.setLevel(logging.INFO)
+
+def lambda_handler(event, context):
+    logger.info(event)
+    
+    event_body = json.loads(event['body']) if event['body'] is not None else None
+    query_parameters = event['queryStringParameters']
+
+    my_device = device.Device(query_parameters['device_type'], query_parameters['device_id'])
+    
+    if event['httpMethod'] == 'GET' and event['path'] == '/device/event':
+        logger.info("in first get")
+        response = my_device.get_event(limit=query_parameters['limit'],latest=query_parameters['latest'])
+        logger.info(json.dumps(response))
+        return {
+            'statusCode': 200,
+            'body': json.dumps(response)
+        }    
+    
+    if event['httpMethod'] == 'POST' and event['path'] == '/device':
+        logger.info("in post")
+        return my_device.post_device(limit=int(event_body['limit']),latest=bool(event_body['latest']))
+
+    return {'message': 'Not found', 'code': 404}
